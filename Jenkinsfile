@@ -5,7 +5,7 @@ pipeline {
         stage('Trigger Test') {
             steps {
                 script {
-                    sh 'curl http://127.0.0.1:8000'
+                    sh 'curl http://127.0.0.1:8001/run-tests'
                 }
             }
         }
