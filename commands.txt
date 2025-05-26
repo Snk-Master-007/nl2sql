@@ -1,0 +1,100 @@
+Dockerfile for NL2SQL App
+
+# nl2sql-app/Dockerfile
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+
+Dockerfile for Test App
+
+
+# test-app/Dockerfile
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+
+
+
+
+requirements
+
+fastapi
+uvicorn
+requests
+pytest       # For test app, if you want to run actual tests
+
+
+
+# Inside nl2sql-app/
+docker build -t nl2sql-app .
+
+# Inside test-app/
+docker build -t test-app .
+
+
+# Run NL2SQL app on port 8000
+docker run -d -p 8000:8000 --name nl2sql-container nl2sql-app
+
+# Run Test app on port 8001
+docker run -d -p 8001:8001 --name test-container test-app
+
+
+
+Docker Compose
+
+# docker-compose.yml
+
+version: '3'
+services:
+  nl2sql:
+    build: ./nl2sql-app
+    ports:
+      - "8000:8000"
+
+  test:
+    build: ./test-app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - nl2sql
+
+
+jenkins setup
+
+
+pipeline {
+    agent any
+    stages {
+        stage('Build and Run Docker Containers') {
+            steps {
+                sh '''
+                docker-compose down || true
+                docker-compose up --build -d
+                sleep 5
+                curl http://localhost:8001/run-tests
+                '''
+            }
+        }
+    }
+}
